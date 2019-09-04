@@ -26,12 +26,20 @@ import (
 type K3sSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	IP          string `json:"ip,omitempty"`
+	User        string `json:"user,omitempty"`
+	SshPort     string `json:"sshPort,omitempty"`
+	Type        string `json:"type,omitempty"`
+	SkipInstall bool   `json:"skipInstall,omitempty"`
 }
 
 // K3sStatus defines the observed state of K3s
 type K3sStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Type                string       `json:"type,omitempty"`
+	Status              string       `json:"status,omitempty"`
+	LastUpdateTimestamp *metav1.Time `json:"lastUpdateTimestamp,omitempty"`
 }
 
 // +kubebuilder:object:root=true
