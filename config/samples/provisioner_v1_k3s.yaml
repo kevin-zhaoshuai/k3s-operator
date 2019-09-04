@@ -1,0 +1,7 @@
+apiVersion: provisioner.k3s.operator/v1
+kind: K3s
+metadata:
+  name: k3s-sample
+spec:
+  # Add fields here
+  foo: bar

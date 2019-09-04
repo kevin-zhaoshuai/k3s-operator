@@ -1,0 +1,7 @@
+version: "2"
+domain: k3s.operator
+repo: github.com/kevin-zhaoshuai/k3s-operator
+resources:
+- group: provisioner
+  version: v1
+  kind: K3s
