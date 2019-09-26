@@ -22,7 +22,7 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 
 	setupLog.Info("============ready to handle: " + IP + " as: " + nodeType + "===========")
 	var k3supCmd string
-	var args []string{}
+	var args []string
 	if nodeType == "server" {
 		k3supCmd = "install"
 		args = []string{k3supCmd, "--user", user, "--ssh-port", sshPort, "--ip", IP}
