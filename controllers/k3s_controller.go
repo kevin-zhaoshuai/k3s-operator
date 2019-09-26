@@ -78,6 +78,7 @@ func (r *K3sReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 		now := metav1.Now()
 		edgeNode.Status.LastUpdateTimestamp = &now
+		err = r.Update(ctx, edgeNode)
 	}
 	return ctrl.Result{}, nil
 }
