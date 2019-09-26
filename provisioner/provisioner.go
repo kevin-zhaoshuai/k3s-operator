@@ -4,7 +4,6 @@ import (
 	"github.com/golang/glog"
 	provisionerv1 "github.com/kevin-zhaoshuai/k3s-operator/api/v1"
 	"io/ioutil"
-	"log"
 	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -31,6 +30,7 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 		sshPort = "22"
 	}
 	cmdStr := k3supCmd + " --user " + user + " --sshPort " + sshPort + " --ip " + IP
+	setupLog.Info(cmdStr)
 	cmd := exec.Command("/usr/local/bin/k3sup", cmdStr)
 	// 获取输出对象，可以从该对象中读取输出结果
 	stdout, err := cmd.StdoutPipe()
@@ -41,13 +41,13 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 	defer stdout.Close()
 	// 运行命令
 	if err := cmd.Start(); err != nil {
-		glog.Fatal(err)
+		setupLog.Error(err, "Run cmd failed")
 	}
 	// 读取输出结果
 	opBytes, err := ioutil.ReadAll(stdout)
 	if err != nil {
 		glog.Fatal(err)
 	}
-	log.Println(string(opBytes))
+	setupLog.Info(string(opBytes))
 	return nil
 }
