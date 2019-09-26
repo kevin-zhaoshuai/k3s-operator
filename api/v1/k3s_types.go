@@ -19,6 +19,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type ProvisionPhase string
+
+const (
+	ProvisionInit       ProvisionPhase = "ProvisionInit"
+	ProvisionInProgress ProvisionPhase = "ProvisionInProgress"
+	ProvisionSucceed    ProvisionPhase = "ProvisionSucceed"
+	ProvisionFailed     ProvisionPhase = "ProvisionFailed"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -37,9 +46,9 @@ type K3sSpec struct {
 type K3sStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Type                string       `json:"type,omitempty"`
-	Status              string       `json:"status,omitempty"`
-	LastUpdateTimestamp *metav1.Time `json:"lastUpdateTimestamp,omitempty"`
+	Type                string         `json:"type,omitempty"`
+	Phase               ProvisionPhase `json:"status,omitempty"`
+	LastUpdateTimestamp *metav1.Time   `json:"lastUpdateTimestamp,omitempty"`
 }
 
 // +kubebuilder:object:root=true

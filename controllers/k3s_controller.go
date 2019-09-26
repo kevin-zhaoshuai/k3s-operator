@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	provisionerv1 "github.com/kevin-zhaoshuai/k3s-operator/api/v1"
+	"github.com/kevin-zhaoshuai/k3s-operator/provisioner"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -38,12 +40,45 @@ type K3sReconciler struct {
 // +kubebuilder:rbac:groups=provisioner.k3s.operator,resources=k3s/status,verbs=get;update;patch
 
 func (r *K3sReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+	ctx := context.Background()
 	_ = r.Log.WithValues("k3s", req.NamespacedName)
 
 	// your logic here
 	setupLog.Info("Just go for test")
+	edgeNode := &provisionerv1.K3s{}
+	err := r.Get(ctx, req.NamespacedName, edgeNode)
+	if err != nil {
+		setupLog.Error(err, "Fail to get edgeNode CRD")
+	}
+	// Initial the Edge Node status
+	if edgeNode.Status.LastUpdateTimestamp == nil {
+		edgeNode.Status.Type = edgeNode.Spec.Type
+		edgeNode.Status.Phase = provisionerv1.ProvisionInit
+		now := metav1.Now()
+		edgeNode.Status.LastUpdateTimestamp = &now
+		err = r.Update(ctx, edgeNode)
+		return ctrl.Result{}, nil
+	}
 
+	if edgeNode.Status.Phase == provisionerv1.ProvisionSucceed {
+		return ctrl.Result{}, nil
+	}
+
+	if edgeNode.Status.Phase == provisionerv1.ProvisionFailed {
+		return ctrl.Result{}, nil
+	}
+	if edgeNode.Status.Phase == provisionerv1.ProvisionInit {
+		edgeNode.Status.Type = edgeNode.Spec.Type
+		errProvisioner := provisioner.ProvisionEdgeNode(*edgeNode)
+		if errProvisioner != nil {
+			setupLog.Error(errProvisioner, "Provision failed")
+			edgeNode.Status.Phase = provisionerv1.ProvisionFailed
+		} else {
+			edgeNode.Status.Phase = provisionerv1.ProvisionSucceed
+		}
+		now := metav1.Now()
+		edgeNode.Status.LastUpdateTimestamp = &now
+	}
 	return ctrl.Result{}, nil
 }
 
