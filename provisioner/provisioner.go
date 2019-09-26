@@ -18,13 +18,17 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 	_ = edgeNode.Spec.SkipInstall
 	sshPort := edgeNode.Spec.SshPort
 	user := edgeNode.Spec.User
+	serverIP := edgeNode.Spec.ServerIP
 
 	setupLog.Info("============ready to handle: " + IP + " as: " + nodeType + "===========")
 	var k3supCmd string
+	var args []string{}
 	if nodeType == "server" {
 		k3supCmd = "install"
+		args = []string{k3supCmd, "--user", user, "--ssh-port", sshPort, "--ip", IP}
 	} else {
 		k3supCmd = "join"
+		args = []string{k3supCmd, "--server-ip", serverIP, "--user", user, "--ssh-port", sshPort, "--ip", IP}
 	}
 	if sshPort == "" {
 		sshPort = "22"
@@ -33,9 +37,7 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 	var stdout, stderr []byte
 	var errStdout, errStderr error
 
-	cmdStr := k3supCmd + " --user " + user + " --sshPort " + sshPort + " --ip " + IP
-	setupLog.Info(cmdStr)
-	cmd := exec.Command("/usr/local/bin/k3sup", cmdStr)
+	cmd := exec.Command("k3sup", args...)
 	// 获取输出对象，可以从该对象中读取输出结果
 	stdoutIn, err := cmd.StdoutPipe()
 	if err != nil {
@@ -97,6 +99,4 @@ func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
 		}
 	}
 	// never reached
-	panic(true)
-	return nil, nil
 }

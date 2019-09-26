@@ -40,6 +40,7 @@ type K3sSpec struct {
 	SshPort     string `json:"sshPort,omitempty"`
 	Type        string `json:"type,omitempty"`
 	SkipInstall bool   `json:"skipInstall,omitempty"`
+	ServerIP    string `json:"serverIp,omitempty"`
 }
 
 // K3sStatus defines the observed state of K3s
