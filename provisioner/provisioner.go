@@ -1,9 +1,9 @@
 package provisioner
 
 import (
-	"github.com/golang/glog"
 	provisionerv1 "github.com/kevin-zhaoshuai/k3s-operator/api/v1"
-	"io/ioutil"
+	"io"
+	"os"
 	"os/exec"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -29,25 +29,74 @@ func ProvisionEdgeNode(edgeNode provisionerv1.K3s) error {
 	if sshPort == "" {
 		sshPort = "22"
 	}
+
+	var stdout, stderr []byte
+	var errStdout, errStderr error
+
 	cmdStr := k3supCmd + " --user " + user + " --sshPort " + sshPort + " --ip " + IP
 	setupLog.Info(cmdStr)
 	cmd := exec.Command("/usr/local/bin/k3sup", cmdStr)
 	// 获取输出对象，可以从该对象中读取输出结果
-	stdout, err := cmd.StdoutPipe()
+	stdoutIn, err := cmd.StdoutPipe()
 	if err != nil {
-		setupLog.Error(err, "Failed to run k3sup")
+		setupLog.Error(err, "Failed to get k3sup stdout")
 	}
+	stderrIn, err := cmd.StderrPipe()
+	if err != nil {
+		setupLog.Error(err, "Failed to get k3sup stderr")
+	}
+	err = cmd.Start()
+	if err != nil {
+		setupLog.Error(err, "Failed to start command")
+	}
+
 	// 保证关闭输出流
-	defer stdout.Close()
+	defer stdoutIn.Close()
+	defer stderrIn.Close()
 	// 运行命令
 	if err := cmd.Start(); err != nil {
 		setupLog.Error(err, "Run cmd failed")
 	}
-	// 读取输出结果
-	opBytes, err := ioutil.ReadAll(stdout)
+	go func() {
+		stdout, errStdout = copyAndCapture(os.Stdout, stdoutIn)
+	}()
+	go func() {
+		stderr, errStderr = copyAndCapture(os.Stderr, stderrIn)
+	}()
+	err = cmd.Wait()
 	if err != nil {
-		glog.Fatal(err)
+		setupLog.Error(err, "cmd.Run() failed with %s\n")
 	}
-	setupLog.Info(string(opBytes))
+	if errStdout != nil {
+		setupLog.Error(errStdout, "failed to capture stdout or stderr\n")
+	}
+	if errStderr != nil {
+		setupLog.Error(errStderr, "failed to capture stdout or stderr\n")
+	}
+	outStr, errStr := string(stdout), string(stderr)
+	setupLog.Info("\nout:\n%s\nerr:\n%s\n", outStr, errStr)
 	return nil
+}
+
+func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
+	var out []byte
+	buf := make([]byte, 1024, 1024)
+	for {
+		n, err := r.Read(buf[:])
+		if n > 0 {
+			d := buf[:n]
+			out = append(out, d...)
+			os.Stdout.Write(d)
+		}
+		if err != nil {
+			// Read returns io.EOF at the end of file, which is not an error for us
+			if err == io.EOF {
+				err = nil
+			}
+			return out, err
+		}
+	}
+	// never reached
+	panic(true)
+	return nil, nil
 }
